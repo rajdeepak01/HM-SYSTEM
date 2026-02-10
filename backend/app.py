@@ -23,8 +23,9 @@ from apk.controllers import *
 
 if __name__=="__main__":
     # db.create_all()
-    # this_new_user = User(username="admin01", email="admin@hsm.com", password="hms1234", role="admin")
+    # this_new_user = User(userName="admin01", email="admin@hms.com", password="hms1234", role="admin", isBlock=False)
     # db.session.add(this_new_user)
+    # db.session.commit()
     # print("Dear Developer Apka Database ready hai yoohooo:) !!")
     app.run()
     

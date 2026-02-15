@@ -7,7 +7,7 @@ from datetime import date, timedelta, datetime
 
 def role_required(required_type):
     def wrapper(fn):
-        @wrapper(fn)
+        @wraps(fn)
         @jwt_required()
         def decorator(*args, **kwargs):
             if getattr(current_user, "role", None) != required_type:
@@ -51,6 +51,7 @@ def hmsUserRegister():
     return jsonify(message="Registration Successfull..! Please Login")
 
 @app.route("/hms/adminDashboard", methods = ["GET"])
+@role_required("admin")
 def HmsAdminDashboard():
     message = request.args.get("message")
     err = request.args.get("err")
@@ -113,4 +114,48 @@ def HmsAdminDashboard():
                 a["departmentName"] = appointment.doctor.department.departmentName
         appointments.append(a)
     return jsonify(doctors=doctors, patients=patients, appointments=appointments, message=message, err=err)
+
+@app.route("/hms/addDoctor", methods=["GET", "POST"])
+@role_required("admin")
+def addDoctor():
+    doctorName = request.json.get("doctorName")
+    email = request.json.get("email")
+    password = request.json.get("password")
+    specialization = request.json.get("specialization")
+    availability = request.json.get("availability")
+    departmentName = request.json.get("departmentName")
+    deptDescription = request.json.get("deptDescription")
+
+    if User.query.filter_by(email=email).first():
+        return jsonify(message="Doctor already exists")
+
+    newUser = User(
+        userName=doctorName,
+        email=email,
+        password=password,
+        role="doctor"
+    )
+    db.session.add(newUser)
+    db.session.commit()
+
+    activeDepartment = Department.query.filter_by(departmentName=departmentName).first()
+    if not activeDepartment:
+        activeDepartment = Department(
+            departmentName=departmentName,
+            deptDescription=deptDescription
+        )
+        db.session.add(activeDepartment)
+        db.session.commit()
+
+    newDoctor = Doctor(
+        doctorName=doctorName,
+        specialization=specialization,
+        availability=availability,
+        userId=newUser.id,
+        departmentId=activeDepartment.id
+    )
+    db.session.add(newDoctor)
+    db.session.commit()
+
+    return jsonify(message="Doctor added successfully")
 

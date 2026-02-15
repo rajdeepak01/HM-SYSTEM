@@ -20,7 +20,7 @@ class Doctor(db.Model):
     id = db.Column(db.Integer, primary_key= True)
     doctorName = db.Column(db.String(), nullable = False)
     specialization = db.Column(db.String, nullable = False)
-    date = db.Column(db.Date, nullable = False)
+    date = db.Column(db.Date)
     availability = db.Column(db.String, nullable = False)
     morningSlot = db.Column(db.Boolean, default=False)
     eveningSlot = db.Column(db.Boolean, default = False)

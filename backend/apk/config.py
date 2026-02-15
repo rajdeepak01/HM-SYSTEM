@@ -5,4 +5,4 @@ class Config():
 class LocalDevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///hms-system-database.sqlite3"
-    JWT_SECRET_KEY = "@ooooooRadheKrishnaooooo"
+    JWT_SECRET_KEY = "@ooooooRadheKrishnaooooo!!!!!!!!!!!!!!!!RadheRadhe............!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"

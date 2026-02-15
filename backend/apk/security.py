@@ -1,5 +1,5 @@
 from flask_jwt_extended import JWTManager
-from apk.models import *
+from apk.models import User
 
 jwt = JWTManager()
 
@@ -10,4 +10,4 @@ def load(user):
 @jwt.user_lookup_loader
 def user_lookup_callback(__jwt_header, jwt_data):
     identity = jwt_data["sub"]
-    return User.query.filter(userName = identity)
+    return User.query.filter_by(userName = identity).first()

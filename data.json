@@ -1,0 +1,19 @@
+
+{"/hms/addDoctor": "admin"},
+{
+  "email": "drtest4@gmail.com",
+  "password": "hms1234",
+  "doctorName": "drtest4",
+  "specialization": "test4",
+  "availability": true,
+  "departmentName": "test4",
+  "deptDescription": "4nd test -->this is for testing purpose!"
+},
+
+
+{"/hms/login": "data"},
+
+{
+  "email": "admin@hms.com",
+  "password": "hms1234"
+}

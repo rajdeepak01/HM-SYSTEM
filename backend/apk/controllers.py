@@ -159,3 +159,50 @@ def addDoctor():
 
     return jsonify(message="Doctor added successfully")
 
+@app.route("/hms/editDoctor:<int:id>", methods=["GET", "POST"])
+@role_required("admin")
+def editDoctor(id):
+    activeUser = User.query.get(id)
+    if not activeUser:
+        return jsonify(message = "Doctor Not Found.. :(")
+    if request.method == "GET":
+        activeDoctor = activeUser.doctorProfile
+        department = getattr(activeDoctor, "department")
+        resultPass = {}
+        resultPass["activeUser"] = {"id": activeUser.id,
+                                    "userName": activeUser.userName,
+                                     "email" : activeUser.email }
+        if activeDoctor:
+            resultPass["doctor"] = {"doctor_id":activeDoctor.id,
+                             "doctorName": activeDoctor.doctorName,
+                             "specialization": department.specialization,
+                             "description": department.description}
+        if department:
+            resultPass["department"] = {"departmentId": department.id,
+                                        "departmentName": department.departmentName,
+                                        "description": department.description}
+        return resultPass
+    
+    activeUser.email = request.json.get("email", activeUser.email)
+    activeUser.password = request.json.get("password", activeUser.password)
+    activeUser.userName = request.json.get("userName", activeUser.userName)
+    activeDoctor = activeUser.doctorProfile
+    activeDoctor.specialization = request.json.get("specialization", activeDoctor.specialization)
+    department = activeDoctor.department
+    activeDoctor.avaliability = request.json.get("avaliability", activeDoctor.availability)
+    department.departmentName = request.json.get("departmentName", department.departmentName)
+    department.deptDescription = request.json.get("description", department.deptDescription)
+    db.session.commit()
+    return jsonify(message= "doctor updated")
+
+@app.route("/hms/deleteDoctor:<int:id>", methods=["Delete"])
+@role_required("admin")
+def deleteDoctor(id):
+    activeDoctor = User.query.get(id)
+    if activeDoctor:
+        db.session.delete(activeDoctor)
+        db.session.commit()
+        return jsonify(message= "Doctor Delete :(")
+    else:
+        return jsonify(message= "Doctor Not Found :(")
+    

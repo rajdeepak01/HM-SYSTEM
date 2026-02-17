@@ -1,16 +1,16 @@
 
 {"/hms/addDoctor": "admin"},
 {
-  "email": "drtest4@gmail.com",
+  "email": "drtest1@gmail.com",
   "password": "hms1234",
-  "doctorName": "drtest4",
-  "specialization": "test4",
+  "doctorName": "drtest1",
+  "specialization": "test1",
   "availability": true,
-  "departmentName": "test4",
-  "deptDescription": "4nd test -->this is for testing purpose!"
+  "departmentName": "test1",
+  "deptDescription": "1st test -->this is for testing purpose!"
 },
 
-
+http://127.0.0.1:5000/hms/deleteDoctor:2
 {"/hms/login": "data"},
 
 {

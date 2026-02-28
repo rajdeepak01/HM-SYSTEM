@@ -4,6 +4,7 @@ from .create_db import db
 from flask_jwt_extended import create_access_token, jwt_required, current_user
 from functools import wraps
 from datetime import date, timedelta, datetime
+from sqlalchemy import or_
 
 def role_required(required_type):
     def wrapper(fn):
@@ -227,3 +228,80 @@ def unblockDoctor(id):
         activeDoctor.isBlock = "0"
         db.session.commit()
         return jsonify(message = f"{activeDoctor.userName} has been unblocked")
+
+@app.route("/hms/editPatient:<int:id>", methods=["GET", "POST"])
+@role_required("admin")
+def editPatient(id):
+    activePatient = User.query.get(id)
+    if not activePatient:
+        return jsonify(message = "Patient Not Found")
+    else:
+        activePatient.email = request.json.get("email", activePatient.email)
+        activePatient.password = request.json.get("password", activePatient.password)
+        activePatient.userName = request.json.get("userName", activePatient.userName)
+        db.session.commit()
+        return jsonify(message = "Patient Data Updated.")
+    
+@app.route("/hms/blockPatient:<int:id>", methods=['POST'])
+@role_required("admin")
+def blockPatient(id):
+    activePatient = User.query.get(id)
+    if not activePatient:
+        return jsonify(message = "Patient Not Found")
+    else:
+        activePatient.isBlock = "1"
+        db.session.commit()
+        return jsonify(message = f"{activePatient.userName} has been blocked")
+
+@app.route("/hms/unblockPatient:<int:id>", methods=['POST'])
+@role_required("admin")
+def unblockPatient(id):
+    activePatient = User.query.get(id)
+    if not activePatient:
+        return jsonify(message = "Patient Not Found")
+    else:
+        activePatient.isBlock = "0"
+        db.session.commit()
+        return jsonify(message = f"{activePatient.userName} has been unblocked")
+    
+@app.route("/hms/deletePatient:<int:id>", methods = ["Delete"])
+def deletePatient(id):
+    activePatient = User.query.get(id)
+    if not activePatient:
+        return jsonify(message = "Patient Not Found")
+    else:
+        db.session.delete(activePatient)
+        db.session.commit()
+        return jsonify(message = "Patient has been deleted :( ")
+
+@app.route("/hms/adminSearch")
+@role_required("admin")
+def adminSearch():
+
+    keyword = request.args.get("search", "")
+    pattern = f"%{keyword}%"
+
+    users = (
+        db.session.query(User)
+        .filter(
+            or_(
+                User.userName.ilike(pattern),
+                User.email.ilike(pattern),
+                User.role.ilike(pattern)
+            )
+        )
+        .all()
+    )
+
+    result = []
+
+    for user in users:
+        result.append({
+            "id": user.id,
+            "userName": user.userName,
+            "email": user.email,
+            "role": user.role,
+            "isBlock": user.isBlock
+        })
+
+    return jsonify(activeUsers=result)

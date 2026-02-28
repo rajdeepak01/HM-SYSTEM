@@ -22,3 +22,11 @@
 ===================== Delete doctor endpoint ============================================
 
 http://127.0.0.1:5000/hms/deleteDoctor:2
+
+================ Patient data =========================================
+
+{
+  "userName": "catwomen",
+  "email": "catwomen@hms.com",
+  "password": "hms1234"
+}

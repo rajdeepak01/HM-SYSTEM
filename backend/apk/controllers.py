@@ -176,11 +176,11 @@ def editDoctor(id):
             resultPass["doctor"] = {"doctor_id":activeDoctor.id,
                              "doctorName": activeDoctor.doctorName,
                              "specialization": department.specialization,
-                             "description": department.description}
+                             "description": department.deptDescription}
         if department:
             resultPass["department"] = {"departmentId": department.id,
                                         "departmentName": department.departmentName,
-                                        "description": department.description}
+                                        "description": department.deptDescription}
         return resultPass
     
     activeUser.email = request.json.get("email", activeUser.email)
@@ -189,7 +189,7 @@ def editDoctor(id):
     activeDoctor = activeUser.doctorProfile
     activeDoctor.specialization = request.json.get("specialization", activeDoctor.specialization)
     department = activeDoctor.department
-    activeDoctor.avaliability = request.json.get("avaliability", activeDoctor.availability)
+    activeDoctor.availability = request.json.get("availability", activeDoctor.availability)
     department.departmentName = request.json.get("departmentName", department.departmentName)
     department.deptDescription = request.json.get("description", department.deptDescription)
     db.session.commit()
@@ -206,3 +206,24 @@ def deleteDoctor(id):
     else:
         return jsonify(message= "Doctor Not Found :(")
     
+@app.route("/hms/blockDoctor:<int:id>", methods=['POST'])
+@role_required("admin")
+def blockDoctor(id):
+    activeDoctor = User.query.get(id)
+    if not activeDoctor:
+        return jsonify(message = "Doctor Not Found")
+    else:
+        activeDoctor.isBlock = "1"
+        db.session.commit()
+        return jsonify(message = f"{activeDoctor.userName} has been blocked")
+
+@app.route("/hms/unblockDoctor:<int:id>", methods=['POST'])
+@role_required("admin")
+def unblockDoctor(id):
+    activeDoctor = User.query.get(id)
+    if not activeDoctor:
+        return jsonify(message = "Doctor Not Found")
+    else:
+        activeDoctor.isBlock = "0"
+        db.session.commit()
+        return jsonify(message = f"{activeDoctor.userName} has been unblocked")

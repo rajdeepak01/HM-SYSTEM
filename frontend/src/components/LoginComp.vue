@@ -57,10 +57,17 @@ export default {
           localStorage.setItem('token', data.authToken)
           localStorage.setItem('email', this.formdata.email)
           localStorage.setItem('role', data.role)
+          localStorage.setItem("userId", data.userId)
+            console.log(data);
 
           if (data.role == 'admin') {
             this.$router.push('/adminDashboard')
           }
+          if (data.role == "doctor"){
+            this.$router.push(`/DoctorDashboard/${data.userId}`)
+              
+          }
+          
         } else {
           this.message = data.message
         }

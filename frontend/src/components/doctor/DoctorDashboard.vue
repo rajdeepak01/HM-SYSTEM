@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import AdminNav from './AdminNav.vue';
+import DoctorNav from './DoctorNav.vue';
+
 
 </script>
 
 <template>
-  <AdminNav />
+   <DoctorNav/>
 
   <div class="container mt-4">
     <router-view />

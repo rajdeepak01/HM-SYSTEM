@@ -331,3 +331,268 @@ def adminSearch():
         })
 
     return jsonify(activeUsers=result)
+
+@app.route("/hms/doctorDashboard:<int:id>")
+@jwt_required("doctor")
+def doctorDashboard(id):
+    activeDoctor = User.query.filter_by(id=id, role="doctor").first()
+    
+    if not activeDoctor:
+        return jsonify(message="Doctor Not Found"), 404
+
+    doctor = activeDoctor.doctorProfile
+
+    upcommintAppointments = Appointment.query.filter(
+        Appointment.doctor_id == doctor.id,
+        Appointment.status == "Booked"
+    ).all()
+
+    completedAppointments = Appointment.query.filter(
+        Appointment.doctor_id == doctor.id,
+        Appointment.status == "completed"
+    ).all()
+
+    comming = []
+
+    for appointment in upcommintAppointments:
+        appointments = {}
+        appointments["id"] = appointment.id
+
+        appointments["date"] = appointment.date.isoformat() if appointment.date else None
+        appointments["time"] = appointment.time.isoformat() if appointment.time else None
+
+        if appointment.patient:
+            appointments["patientId"] = appointment.patient.id
+            appointments["patientName"] = appointment.patient.patientName
+
+        comming.append(appointments)
+
+    completed = []
+
+    for complete in completedAppointments:
+        completeResult = {}
+        completeResult["id"] = complete.id
+
+        completeResult["date"] = complete.date.isoformat() if complete.date else None
+        completeResult["time"] = complete.time.isoformat() if complete.time else None
+
+        if complete.patient:
+            completeResult["patientId"] = complete.patient.id
+            completeResult["patientName"] = complete.patient.patientName
+
+        completed.append(completeResult)
+
+    out = {
+        "this_doctor": {
+            "user_id": activeDoctor.id,
+            "username": activeDoctor.userName
+        },
+        "doctor": {
+            "doctor_id": doctor.id,
+            "doctor_name": doctor.doctorName,
+            "availability": doctor.availability
+        },
+        "upcomming_appointments": comming,
+        "completed_appointments": completed
+    }
+
+    return jsonify(out), 200
+
+@app.route("/hms/updatePatient:<int:appointmentId>:<int:userId>", methods=["GET", "POST"])
+@role_required("doctor")
+def updatePatient(appointmentId, userId):
+
+    this_doctor_user = User.query.filter_by(id=userId, role="doctor").first()
+    if not this_doctor_user:
+        return jsonify(message="Doctor not found"), 404
+
+    doctor = this_doctor_user.doctorProfile
+
+    appointment = Appointment.query.get(appointmentId)
+    if not appointment:
+        return jsonify(message="Appointment not found"), 404
+
+    patient = appointment.patient
+
+    treatments_q = Treatment.query.filter_by(
+        doctorId=doctor.id,
+        patientId=patient.id
+    ).all()
+
+    if request.method == "GET":
+
+        treatments = []
+        for t in treatments_q:
+            treatments.append({
+                "diagnosis": t.diagnosis,
+                "prescription": t.prescription,
+                "notes": t.notes,
+                "appointmentId": t.appointmentId
+            })
+
+        out = {
+            "patient": {
+                "patient_id": patient.id,
+                "patient_name": patient.patientName
+            },
+            "this_doctor": {
+                "user_id": this_doctor_user.id,
+                "username": this_doctor_user.userName
+            },
+            "appointment": {
+                "appointment_id": appointment.id,
+                "date": appointment.date.isoformat() if appointment.date else None,
+                "time": appointment.time.isoformat() if appointment.time else None
+            },
+            "doctor": {
+                "doctor_id": doctor.id,
+                "doctor_name": doctor.doctorName
+            },
+            "treatments": treatments
+        }
+
+        return jsonify(out)
+
+    visit_type = request.json.get("visit_type")
+    medicines = request.json.get("medicines")
+    tests_done = request.json.get("tests_done")
+    diagnosis = request.json.get("diagnosis")
+    prescription = request.json.get("prescription")
+    notes = request.json.get("notes")
+
+    treatment = Treatment(
+        diagnosis=diagnosis,
+        prescription=prescription,
+        notes=notes,
+        appointmentId=appointment.id,
+        doctorId=doctor.id,
+        patientId=patient.id,
+        visiteType=visit_type,
+        medicines=medicines,
+        testsDone=tests_done
+    )
+
+    db.session.add(treatment)
+    db.session.commit()
+
+    return jsonify(message="Treatment saved"), 200
+
+@app.route("/hms/completeTreatment:<int:id>")
+@role_required("doctor")
+def completeTreatment(id):
+    appointments = Appointment.query.get(id)
+    appointments.status = "completed"
+    db.session.commit()
+    return jsonify(message= "Treatment completed")
+
+@app.route("/hms/deleteRequest:<int:id>")
+@role_required("doctor")
+def doctorDeleteRequest(id):
+    appointment = Appointment.query.get(id)
+    db.session.delete(appointment)
+    db.session.commit()
+    return jsonify(message="Request Deleted")
+
+@app.route("/hms/viewPatientTreatments:<int:patientId>:<int:userId>", methods=["GET"])
+@role_required("doctor")
+def viewPatientTreatments(patientId, userId):
+
+    doctor_user = User.query.filter_by(id=userId, role="doctor").first()
+    doctor = doctor_user.doctorProfile
+    patient = Patient.query.get(patientId)
+    treatments = Treatment.query.filter_by(
+        doctorId=doctor.id,
+        patientId=patient.id
+    ).all()
+
+    result = []
+
+    for t in treatments:
+        result.append({
+            "diagnosis": t.diagnosis,
+            "prescription": t.prescription,
+            "notes": t.notes,
+            "medicines": t.medicines,
+            "testsDone": t.testsDone,
+            "visitType": t.visiteType,
+            "appointmentId": t.appointmentId
+        })
+
+    return jsonify({
+        "patient": {
+            "id": patient.id,
+            "name": patient.patientName
+        },
+        "treatments": result
+    }), 200
+
+@app.route("/hms/setAvailability:<int:userId>", methods=["GET", "POST"])
+@role_required("doctor")
+def setAvailability(userId):
+
+    this_doctor_user = User.query.filter_by(id=userId, role="doctor").first()
+    if not this_doctor_user:
+        return jsonify(message="Doctor not found"), 404
+
+    doctorProfile = this_doctor_user.doctorProfile
+
+    today = date.today()
+    min_date = today.isoformat()
+    max_date = (today + timedelta(days=7)).isoformat()
+
+    message = None
+
+    if request.method == "POST":
+        selected_date = request.json.get("date")
+        morning_slot = bool(request.json.get("morningSlot"))
+        evening_slot = bool(request.json.get("eveningSlot"))
+
+        selected_date_obj = date.fromisoformat(selected_date)
+
+        existing = Doctor.query.filter_by(
+            userId=this_doctor_user.id,
+            date=selected_date_obj
+        ).first()
+
+        if existing:
+            existing.morningSlot = morning_slot
+            existing.eveningSlot = evening_slot
+        else:
+            new_availability = Doctor(
+                doctorName=doctorProfile.doctorName,
+                specialization=doctorProfile.specialization,
+                availability="available",
+                date=selected_date_obj,
+                morningSlot=morning_slot,
+                eveningSlot=evening_slot,
+                userId=this_doctor_user.id,
+                departmentId=doctorProfile.departmentId
+            )
+            db.session.add(new_availability)
+
+        db.session.commit()
+        message = "Availability set successfully."
+
+    availabilities_q = Doctor.query.filter(
+        Doctor.userId == this_doctor_user.id
+    ).all()
+
+    availabilities = []
+
+    for a in availabilities_q:
+        availabilities.append({
+            "date": a.date.isoformat() if a.date else None,
+            "morningSlot": a.morningSlot,
+            "eveningSlot": a.eveningSlot
+        })
+
+    return jsonify({
+        "min_date": min_date,
+        "max_date": max_date,
+        "availabilities": availabilities,
+        "this_doctor": {
+            "user_id": this_doctor_user.id,
+            "username": this_doctor_user.userName
+        },
+        "message": message
+    })

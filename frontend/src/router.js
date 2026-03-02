@@ -8,6 +8,11 @@ import EditDoctor from './components/admin/EditDoctor.vue'
 import UsersContent from './components/admin/UsersContent.vue'
 import EditPatient from './components/EditPatient.vue'
 import SearchResults from './components/SearchResults.vue'
+import DoctorDashboard from './components/doctor/DoctorDashboard.vue'
+import DoctorTable from './components/doctor/DoctorTable.vue'
+import UpdatePatient from './components/doctor/UpdatePatient.vue'
+import ViewTreatment from './components/doctor/ViewTreatment.vue'
+import SetAvailability from './components/doctor/SetAvailability.vue'
 
 const routes = [
   {
@@ -49,6 +54,28 @@ const routes = [
         component: SearchResults,
       },
     ],
+  },
+  {
+    path: "/DoctorDashboard/:id",
+    component: DoctorDashboard,
+    children: [
+      {
+        path: "",
+        component: DoctorTable,
+      },
+      {
+        path: "/updatePatient/:appointmentId/:userId",
+        component: UpdatePatient
+      },
+      {
+        path: "/viewTreatments/:patientId/:userId",
+        component: ViewTreatment
+      },
+      {
+        path: "/setAvailability/:userId",
+        component: SetAvailability
+      }
+    ]
   },
 ]
 const router = createRouter({

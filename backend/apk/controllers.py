@@ -26,9 +26,6 @@ def hmsLogin():
     email = request.json.get("email")
     password = request.json.get("password")
     activeUser = User.query.filter_by(email=email).first()
-    print(email)
-    print(password)
-    print(activeUser.role)
     if not activeUser:
         return jsonify(message = "Email is not registered"), 401
     if activeUser.role==True:
@@ -36,7 +33,7 @@ def hmsLogin():
     if activeUser.password != password:
         return jsonify(message = "Wrong password, Please try again."), 401
     authToken = create_access_token(identity = activeUser)
-    return jsonify(authToken=authToken, role = activeUser.role, user_id = activeUser.id, userName = activeUser.userName)
+    return jsonify(authToken=authToken, role = activeUser.role, userId = activeUser.id, userName = activeUser.userName)
 
 @app.route("/hms/register", methods = ["GET", "POST"])
 def hmsUserRegister():
@@ -64,7 +61,7 @@ def HmsAdminDashboard():
     
     for doctorUser in HmsDoctors:
         d = {}
-        d["user_id"]  = doctorUser.id
+        d["userId"]  = doctorUser.id
         d["userName"] = doctorUser.userName
         d["email"]    = doctorUser.email
         d["isBlock"] = getattr(doctorUser, "isBlock", False)
@@ -163,39 +160,55 @@ def addDoctor():
 @app.route("/hms/editDoctor:<int:id>", methods=["GET", "POST"])
 @role_required("admin")
 def editDoctor(id):
-    activeUser = User.query.get(id)
-    if not activeUser:
-        return jsonify(message = "Doctor Not Found.. :(")
-    if request.method == "GET":
-        activeDoctor = activeUser.doctorProfile
-        department = getattr(activeDoctor, "department")
-        resultPass = {}
-        resultPass["activeUser"] = {"id": activeUser.id,
-                                    "userName": activeUser.userName,
-                                     "email" : activeUser.email }
-        if activeDoctor:
-            resultPass["doctor"] = {"doctor_id":activeDoctor.id,
-                             "doctorName": activeDoctor.doctorName,
-                             "specialization": department.specialization,
-                             "description": department.deptDescription}
-        if department:
-            resultPass["department"] = {"departmentId": department.id,
-                                        "departmentName": department.departmentName,
-                                        "description": department.deptDescription}
-        return resultPass
-    
-    activeUser.email = request.json.get("email", activeUser.email)
-    activeUser.password = request.json.get("password", activeUser.password)
-    activeUser.userName = request.json.get("userName", activeUser.userName)
-    activeDoctor = activeUser.doctorProfile
-    activeDoctor.specialization = request.json.get("specialization", activeDoctor.specialization)
-    department = activeDoctor.department
-    activeDoctor.availability = request.json.get("availability", activeDoctor.availability)
-    department.departmentName = request.json.get("departmentName", department.departmentName)
-    department.deptDescription = request.json.get("description", department.deptDescription)
-    db.session.commit()
-    return jsonify(message= "doctor updated")
 
+    activeDoctor = Doctor.query.get(id)
+
+    if not activeDoctor:
+        return jsonify(message="Doctor Not Found.. :("), 404
+
+    activeUser = activeDoctor.user
+    department = activeDoctor.department
+
+    if request.method == "GET":
+
+        resultPass = {
+            "activeUser": {
+                "id": activeUser.id,
+                "userName": activeUser.userName,
+                "email": activeUser.email
+            },
+            "doctor": {
+                "doctor_id": activeDoctor.id,
+                "doctorName": activeDoctor.doctorName,
+                "specialization": activeDoctor.specialization,
+                "availability": activeDoctor.availability
+            },
+            "department": {
+                "departmentId": department.id,
+                "departmentName": department.departmentName,
+                "description": department.deptDescription
+            }
+        }
+
+        return jsonify(resultPass)
+
+    data = request.get_json()
+
+    activeUser.email = data.get("email", activeUser.email)
+    activeUser.userName = data.get("userName", activeUser.userName)
+
+    if data.get("password"):
+        activeUser.password = data.get("password")
+    activeDoctor.doctorName = activeUser.userName
+    activeDoctor.specialization = data.get("specialization", activeDoctor.specialization)
+    activeDoctor.availability = data.get("availability", activeDoctor.availability)
+
+    department.departmentName = data.get("departmentName", department.departmentName)
+    department.deptDescription = data.get("description", department.deptDescription)
+
+    db.session.commit()
+
+    return jsonify(message="doctor updated"), 200
 @app.route("/hms/deleteDoctor:<int:id>", methods=["Delete"])
 @role_required("admin")
 def deleteDoctor(id):
@@ -234,14 +247,27 @@ def unblockDoctor(id):
 def editPatient(id):
     activePatient = User.query.get(id)
     if not activePatient:
-        return jsonify(message = "Patient Not Found")
-    else:
-        activePatient.email = request.json.get("email", activePatient.email)
-        activePatient.password = request.json.get("password", activePatient.password)
-        activePatient.userName = request.json.get("userName", activePatient.userName)
-        db.session.commit()
-        return jsonify(message = "Patient Data Updated.")
-    
+        return jsonify(message="Patient Not Found"), 404
+
+    if request.method == "GET":
+        return jsonify({
+            "activeUser": {
+                "id": activePatient.id,
+                "userName": activePatient.userName,
+                "email": activePatient.email
+            }
+        })
+
+    data = request.get_json()
+
+    activePatient.email = data.get("email", activePatient.email)
+    activePatient.password = data.get("password", activePatient.password)
+    activePatient.userName = data.get("userName", activePatient.userName)
+
+    db.session.commit()
+
+    return jsonify(message="Patient Data Updated.")
+
 @app.route("/hms/blockPatient:<int:id>", methods=['POST'])
 @role_required("admin")
 def blockPatient(id):

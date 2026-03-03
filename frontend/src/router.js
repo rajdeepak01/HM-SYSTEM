@@ -13,6 +13,7 @@ import DoctorTable from './components/doctor/DoctorTable.vue'
 import UpdatePatient from './components/doctor/UpdatePatient.vue'
 import ViewTreatment from './components/doctor/ViewTreatment.vue'
 import SetAvailability from './components/doctor/SetAvailability.vue'
+import PatientHistory from './components/admin/PatientHistory.vue'
 
 const routes = [
   {
@@ -52,6 +53,10 @@ const routes = [
       {
         path: 'search',
         component: SearchResults,
+      },
+      {
+        path: "AdminViewTreatments/:patientId/:userId",
+        component: PatientHistory
       },
     ],
   },

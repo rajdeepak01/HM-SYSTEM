@@ -1,7 +1,6 @@
 <template>
-  <div class="reg-doc">
-    <h4>Registerd Doctors</h4>
-
+  <h4>Registerd Doctors</h4>
+  <div class="reg-doc" style="max-height: 250px; overflow-y: auto;">
     <table class="table table-primary">
       <thead>
         <tr>
@@ -20,14 +19,12 @@
             <router-link type="button" class="btn btn-primary me-2"
               :to="`/adminDashboard/EditDoctor/${doctor.doctorId}`">Edit</router-link>
 
-            <button type="button" class="btn me-2"
-              :class="doctor.isBlock == '1' ? 'btn-success' : 'btn-warning'"
+            <button type="button" class="btn me-2" :class="doctor.isBlock == '1' ? 'btn-success' : 'btn-warning'"
               @click="toggleBlock(doctor)">
               {{ doctor.isBlock == '1' ? 'Unblock' : 'Block' }}
             </button>
 
-            <button type="button" class="btn btn-danger me-2"
-              @click="deleteDoctor(doctor)">
+            <button type="button" class="btn btn-danger me-2" @click="deleteDoctor(doctor)">
               Delete
             </button>
           </td>
@@ -36,8 +33,8 @@
     </table>
   </div>
 
-  <div class="reg-doc">
-    <h4>Registerd Patients</h4>
+  <h4>Registerd Patients</h4>
+  <div class="reg-doc" style="max-height: 250px; overflow-y: auto;">
 
     <table class="table table-success">
       <thead>
@@ -57,14 +54,12 @@
             <router-link type="button" class="btn btn-primary me-2"
               :to="`/adminDashboard/EditPatient/${patient.userId}`">Edit</router-link>
 
-            <button type="button" class="btn me-2"
-              :class="patient.isBlock == '1' ? 'btn-success' : 'btn-warning'"
+            <button type="button" class="btn me-2" :class="patient.isBlock == '1' ? 'btn-success' : 'btn-warning'"
               @click="toggleBlockPatient(patient)">
               {{ patient.isBlock == '1' ? 'Unblock' : 'Block' }}
             </button>
 
-            <button type="button" class="btn btn-danger me-2"
-              @click="deletePatient(patient)">
+            <button type="button" class="btn btn-danger me-2" @click="deletePatient(patient)">
               Delete
             </button>
           </td>
@@ -73,25 +68,33 @@
     </table>
   </div>
 
-  <div class="reg-doc">
-    <h4>Upcommint Appointments</h4>
-
+  <h4>Upcommint Appointments</h4>
+  <div class="reg-doc" style="max-height: 250px; overflow-y: auto;">
     <table class="table table-warning">
       <thead>
         <tr>
           <th scope="col">Id</th>
-          <th scope="col">Patient Name</th>
-          <th scope="col">Doctor Name</th>
+          <th scope="col">Patient</th>
+          <th scope="col">Doctor</th>
+          <th scope="col">Department</th>
+          <th scope="col">Status</th>
           <th scope="col">View History</th>
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <th scope="row">1</th>
-          <td>Mark</td>
-          <td>Otto</td>
+        <tr v-for="appointment in appointments">
+          <th scope="row">{{ appointment.appointment_id }}</th>
+          <td>{{ appointment.patientName }}</td>
+          <td>{{ appointment.doctorName }}</td>
+          <td>{{ appointment.departmentName }}</td>
+          <td>{{ appointment.status }}</td>
           <td>
-            <button type="button" class="btn btn-primary me-2">View</button>
+            <router-link
+  class="btn btn-primary"
+  :to="`/adminDashboard/AdminViewTreatments/${appointment.patientId}/${appointment.doctorId}`"
+>
+  History
+</router-link>
           </td>
         </tr>
       </tbody>
@@ -151,6 +154,9 @@ export default {
         if (response.ok) {
           this.doctors = data.doctors
           this.patients = data.patients
+          this.appointments = data.appointments
+          console.log(data.appointments);
+
         } else {
           this.err = data.message
         }

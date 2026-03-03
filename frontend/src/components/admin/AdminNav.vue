@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
-      <router-link class="navbar-brand" to="/adminDashboard" href="#">Navbar</router-link>
+      <router-link class="navbar-brand" to="/adminDashboard" href="#">HMS</router-link>
       <button
         class="navbar-toggler"
         type="button"

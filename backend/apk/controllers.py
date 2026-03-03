@@ -55,7 +55,7 @@ def HmsAdminDashboard():
     err = request.args.get("err")
     HmsDoctors = User.query.filter_by(role = "doctor").all()
     HmsPatients = User.query.filter_by(role = "patient").all()
-    HmsAppointments = Appointment.query.filter_by(status = "Booked").all()
+    HmsAppointments = Appointment.query.all()
     
     doctors = []
     
@@ -299,6 +299,56 @@ def deletePatient(id):
         db.session.delete(activePatient)
         db.session.commit()
         return jsonify(message = "Patient has been deleted :( ")
+
+@app.route("/hms/adminFullTreatmentHistory:<int:patientId>", methods=["GET"])
+@role_required("admin")
+def adminFullTreatmentHistory(patientId):
+
+    patient = Patient.query.get(patientId)
+
+    if not patient:
+        return jsonify(message="Patient not found"), 404
+
+    treatments_q = Treatment.query.filter_by(
+        patientId=patient.id
+    ).all()
+
+    result = []
+
+    for t in treatments_q:
+
+        doctor = Doctor.query.get(t.doctorId)
+        appointment = Appointment.query.get(t.appointmentId)
+
+        entry = {
+            "treatment_id": t.id,
+            "diagnosis": t.diagnosis,
+            "prescription": t.prescription,
+            "notes": t.notes,
+            "medicines": t.medicines,
+            "testsDone": t.testsDone,
+            "visitType": t.visiteType,
+            "doctor": {
+                "doctor_id": doctor.id if doctor else None,
+                "doctor_name": doctor.doctorName if doctor else None
+            },
+            "appointment": {
+                "appointment_id": appointment.id if appointment else None,
+                "date": appointment.date.isoformat() if appointment and appointment.date else None,
+                "time": appointment.time.isoformat() if appointment and appointment.time else None,
+                "status": appointment.status if appointment else None
+            }
+        }
+
+        result.append(entry)
+
+    return jsonify({
+        "patient": {
+            "patient_id": patient.id,
+            "patient_name": patient.patientName
+        },
+        "treatments": result
+    }), 200
 
 @app.route("/hms/adminSearch")
 @role_required("admin")

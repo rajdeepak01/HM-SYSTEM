@@ -19,8 +19,8 @@
             </router-link>
           </li>
 
-          <router-link class="nav-link" :to="`/setAvailability/${doctorId}`">
-            Set Schedule
+          <router-link class="nav-link">
+            History
           </router-link>
 
           <li class="nav-item dropdown">
@@ -30,6 +30,9 @@
 
             <ul class="dropdown-menu">
               <li>
+                <button class="dropdown-item">
+                  Edit Profile
+                </button>
                 <button class="dropdown-item" @click="logout">
                   Logout
                 </button>
@@ -48,13 +51,13 @@ export default {
   name: "NavBarComp",
 
   computed: {
-    doctorId() {
+    userId() {
       return localStorage.getItem("userId")
     },
 
     dashboardLink() {
-      return this.doctorId
-        ? `/DoctorDashboard/${this.doctorId}`
+      return this.userId
+        ? `/PatientDashboard/${this.userId}`
         : "/login"
     }
   },

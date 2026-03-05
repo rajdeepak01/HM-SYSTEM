@@ -122,14 +122,8 @@ export default {
 
         if (response.ok) {
           this.message = "Treatment saved successfully"
-          this.formdata = {
-            diagnosis: "",
-            prescription: "",
-            medicines: "",
-            tests_done: "",
-            visit_type: "",
-            notes: "",
-          }
+          this.$router.push(`/DoctorDashboard/${userId}`)
+
         } else {
           this.message = data.message
         }

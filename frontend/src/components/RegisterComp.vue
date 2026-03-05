@@ -22,7 +22,7 @@
 
           <button type="submit" class="btn btn-primary w-100">Register</button>
           Existing user?
-          <a href="/login">login here</a>
+          <router-link to="/login">Login</router-link>
         </form>
       </div>
     </div>

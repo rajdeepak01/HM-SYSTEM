@@ -14,26 +14,16 @@
 
           <div class="mb-3">
             <label class="form-label">Select Date</label>
-            <input
-              type="date"
-              class="form-control"
-              v-model="formdata.date"
-              :min="min_date"
-              :max="max_date"
-            />
+            <input type="date" class="form-control" v-model="formdata.date" :min="min_date" :max="max_date" />
           </div>
 
           <div class="form-check mb-2">
-            <input type="checkbox"
-                   class="form-check-input"
-                   v-model="formdata.morningSlot" />
+            <input type="checkbox" class="form-check-input" v-model="formdata.morningSlot" />
             <label class="form-check-label">Morning Slot</label>
           </div>
 
           <div class="form-check mb-3">
-            <input type="checkbox"
-                   class="form-check-input"
-                   v-model="formdata.eveningSlot" />
+            <input type="checkbox" class="form-check-input" v-model="formdata.eveningSlot" />
             <label class="form-check-label">Evening Slot</label>
           </div>
 
@@ -142,7 +132,11 @@ export default {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`
             },
-            body: JSON.stringify(this.formdata)
+            body: JSON.stringify({
+              date: this.formdata.date,
+              morning_slot: this.formdata.morningSlot,
+              evening_slot: this.formdata.eveningSlot
+            })
           }
         )
 

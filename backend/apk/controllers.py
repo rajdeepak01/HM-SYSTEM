@@ -576,15 +576,14 @@ def viewPatientTreatments(patientId, userId):
         "treatments": result
     }), 200
 
-@app.route("/hms/setAvailability:<int:userId>", methods=["GET", "POST"])
+@app.route("/hms/setAvailability:<int:user_id>", methods=["GET", "POST"])
 @role_required("doctor")
-def setAvailability(userId):
+def api_set_availability(user_id):
 
-    this_doctor_user = User.query.filter_by(id=userId, role="doctor").first()
+    this_doctor_user = User.query.filter_by(id=user_id, role="doctor").first()
+
     if not this_doctor_user:
         return jsonify(message="Doctor not found"), 404
-
-    doctorProfile = this_doctor_user.doctorProfile
 
     today = date.today()
     min_date = today.isoformat()
@@ -593,11 +592,18 @@ def setAvailability(userId):
     message = None
 
     if request.method == "POST":
-        selected_date = request.json.get("date")
-        morning_slot = bool(request.json.get("morningSlot"))
-        evening_slot = bool(request.json.get("eveningSlot"))
 
-        selected_date_obj = date.fromisoformat(selected_date)
+        selected_date = request.json.get("date")
+        morning_slot = bool(request.json.get("morning_slot"))
+        evening_slot = bool(request.json.get("evening_slot"))
+
+        if not selected_date:
+            return jsonify(message="Date is required"),400
+
+        try:
+            selected_date_obj = date.fromisoformat(selected_date)
+        except ValueError:
+            return jsonify(message="Invalid date format"),400
 
         existing = Doctor.query.filter_by(
             userId=this_doctor_user.id,
@@ -607,30 +613,36 @@ def setAvailability(userId):
         if existing:
             existing.morningSlot = morning_slot
             existing.eveningSlot = evening_slot
+
         else:
+
+            base_doctor = this_doctor_user.doctorProfile
+
             new_availability = Doctor(
-                doctorName=doctorProfile.doctorName,
-                specialization=doctorProfile.specialization,
+                doctorName=base_doctor.doctorName,
+                specialization=base_doctor.specialization,
                 availability="available",
                 date=selected_date_obj,
                 morningSlot=morning_slot,
                 eveningSlot=evening_slot,
                 userId=this_doctor_user.id,
-                departmentId=doctorProfile.departmentId
+                departmentId=base_doctor.departmentId
             )
+
             db.session.add(new_availability)
 
         db.session.commit()
-        message = "Availability set successfully."
+        message = "Availability updated"
 
-    availabilities_q = Doctor.query.filter(
-        Doctor.userId == this_doctor_user.id
+    availabilities_q = Doctor.query.filter_by(
+        userId=this_doctor_user.id
     ).all()
 
     availabilities = []
 
     for a in availabilities_q:
         availabilities.append({
+            "doctorId": a.id,
             "date": a.date.isoformat() if a.date else None,
             "morningSlot": a.morningSlot,
             "eveningSlot": a.eveningSlot
@@ -641,8 +653,128 @@ def setAvailability(userId):
         "max_date": max_date,
         "availabilities": availabilities,
         "this_doctor": {
-            "user_id": this_doctor_user.id,
-            "username": this_doctor_user.userName
+            "userId": this_doctor_user.id,
+            "userName": this_doctor_user.userName
         },
         "message": message
     })
+
+@app.route("/hms/PatientDashboard:<int:id>")
+@role_required("patient")
+def PatientDashboard(id):
+
+    activePatient = User.query.filter_by(id=id).first()
+
+    if not activePatient:
+        return jsonify(message="Patient not found"),404
+
+    departments = Department.query.all()
+
+    departmentList = []
+
+    for i in departments:
+
+        doctor_list = []
+        seen = set()
+
+        for doctor in i.doctors:
+
+            if doctor.userId in seen:
+                continue
+
+            seen.add(doctor.userId)
+
+            doctor_list.append({
+                "id": doctor.id,
+                "doctorName": doctor.doctorName,
+                "specialization": doctor.specialization,
+                "availability": doctor.availability
+            })
+
+        departmentList.append({
+            "id": i.id,
+            "departmentName": i.departmentName,
+            "deptDescription": i.deptDescription,
+            "doctors": doctor_list
+        })
+
+    return jsonify({"departments": departmentList})
+
+@app.route("/hms/doctorAvailability:<int:doctorId>", methods=["GET"])
+@role_required("patient")
+def doctorAvailability(doctorId):
+
+    doctor = Doctor.query.get(doctorId)
+
+    if not doctor:
+        return jsonify(message="Doctor not found"),404
+
+    doctor_rows = Doctor.query.filter_by(
+        userId=doctor.userId
+    ).all()
+
+    result = []
+
+    for d in doctor_rows:
+        if d.date:
+            result.append({
+                "doctorId": d.id,
+                "date": d.date.isoformat(),
+                "morningSlot": d.morningSlot,
+                "eveningSlot": d.eveningSlot
+            })
+
+    return jsonify({
+        "doctorName": doctor.doctorName,
+        "availability": result
+    })
+
+@app.route("/hms/bookAppointment", methods=["POST"])
+@role_required("patient")
+def bookAppointment():
+
+    data = request.get_json()
+
+    doctor_id = data.get("doctorId")
+    date_str = data.get("date")
+    time_str = data.get("time")
+
+    doctor = Doctor.query.get(doctor_id)
+
+    if not doctor:
+        return jsonify(message="Doctor not found"), 404
+
+    patient = current_user.patientProfile
+
+    appointment_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    appointment_time = datetime.strptime(time_str, "%H:%M").time()
+
+    doctor_slot = Appointment.query.filter_by(
+        doctor_id=doctor.id,
+        date=appointment_date,
+        time=appointment_time
+    ).first()
+
+    if doctor_slot:
+        return jsonify(message="Doctor slot already booked"), 400
+
+    patient_slot = Appointment.query.filter_by(
+        patient_id=patient.id,
+        date=appointment_date,
+        time=appointment_time
+    ).first()
+
+    if patient_slot:
+        return jsonify(message="You already have appointment at this time"), 400
+
+    new_appointment = Appointment(
+        date=appointment_date,
+        time=appointment_time,
+        doctor_id=doctor.id,
+        patient_id=patient.id
+    )
+
+    db.session.add(new_appointment)
+    db.session.commit()
+
+    return jsonify(message="Appointment booked successfully")

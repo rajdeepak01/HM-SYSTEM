@@ -1,7 +1,7 @@
 <template>
   <div class="d-flex flex-column justify-content-center align-items-center" style="height: 75vh">
     <h1 class="mb-4">Login to <span class="text-primary">HMS</span></h1>
-    <p class="text-danger-emphasis">{{ message }}</p>
+    <p v-if="message" class="alert alert-warning mt-3">{{ message }}</p>
 
     <div class="card" style="width: 350px">
       <div class="card-body p-4">
@@ -17,7 +17,7 @@
           </div>
 
           <button type="submit" class="btn btn-primary w-100">Login</button> new user?
-          <a href="/register">Register here</a>
+          <router-link to="register">Register here</router-link>
         </form>
       </div>
     </div>
@@ -64,8 +64,10 @@ export default {
             this.$router.push('/adminDashboard')
           }
           if (data.role == "doctor"){
-            this.$router.push(`/DoctorDashboard/${data.userId}`)
-              
+            this.$router.push(`/DoctorDashboard/${data.userId}`) 
+          }
+          if (data.role == "patient") {
+            this.$router.push(`/patientDashboard/${data.userId}`)
           }
           
         } else {

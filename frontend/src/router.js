@@ -14,6 +14,10 @@ import UpdatePatient from './components/doctor/UpdatePatient.vue'
 import ViewTreatment from './components/doctor/ViewTreatment.vue'
 import SetAvailability from './components/doctor/SetAvailability.vue'
 import PatientHistory from './components/admin/PatientHistory.vue'
+import PatientDashboard from './components/patient/PatientDashboard.vue'
+import PatientTable from './components/patient/PatientTable.vue'
+import ViewDetails from './components/patient/ViewDetails.vue'
+import BookAppointment from './components/patient/BookAppointment.vue'
 
 const routes = [
   {
@@ -79,6 +83,24 @@ const routes = [
       {
         path: "/setAvailability/:userId",
         component: SetAvailability
+      }
+    ]
+  },
+  {
+    path: "/patientDashboard/:userId",
+    component: PatientDashboard,
+    children: [
+      {
+        path: "",
+        component: PatientTable
+      },
+      {
+        path: "/ViewDetails/:id",
+        component: ViewDetails
+      },
+      {
+        path:"/book/:doctorId",
+        component: BookAppointment
       }
     ]
   },

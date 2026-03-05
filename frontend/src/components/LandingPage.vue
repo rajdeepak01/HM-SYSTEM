@@ -1,8 +1,8 @@
 <template>
   <div class="mb-2">
-   <h2> <router-link class="text-decoration-none" to="/">
-    {{ message }}
-  </router-link></h2>
+    <h2> <router-link class="text-decoration-none" to="/">
+        {{ message }}
+      </router-link></h2>
   </div>
 
   <router-link class="link-success " to="/login"> Login </router-link>

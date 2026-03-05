@@ -145,6 +145,8 @@ export default {
         }
 
         this.message = data.message || "Doctor updated successfully"
+        this.$router.push("/AdminDashboard")
+
 
       } catch (err) {
         this.message = "Update failed"

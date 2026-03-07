@@ -5,6 +5,8 @@ from flask_jwt_extended import create_access_token, jwt_required, current_user
 from functools import wraps
 from datetime import date, timedelta, datetime
 from sqlalchemy import or_
+from .task import *
+from celery.result import AsyncResult
 
 def role_required(required_type):
     def wrapper(fn):
@@ -17,6 +19,7 @@ def role_required(required_type):
         return decorator
     return wrapper
 
+
 @app.route("/", methods = ["GET"])
 def SystemStart():
     return jsonify(message="Welcome to HM-System")
@@ -28,7 +31,7 @@ def hmsLogin():
     activeUser = User.query.filter_by(email=email).first()
     if not activeUser:
         return jsonify(message = "Email is not registered"), 401
-    if activeUser.role==True:
+    if activeUser.isBlock=="1":
         return jsonify(message = "Your account is blocked, please contact Admin."), 403
     if activeUser.password != password:
         return jsonify(message = "Wrong password, Please try again."), 401
@@ -45,6 +48,15 @@ def hmsUserRegister():
         return jsonify(message = "User Already exist")
     addUser = User(userName = userName, email = email, password= password)
     db.session.add(addUser)
+    db.session.commit()
+    newPatient = Patient(
+    patientName=userName,
+    age=0,
+    gender="NA",
+    contact="NA",
+    userId=addUser.id
+    )
+    db.session.add(newPatient)
     db.session.commit()
     return jsonify(message="Registration Successfull..! Please Login")
 
@@ -209,17 +221,20 @@ def editDoctor(id):
     db.session.commit()
 
     return jsonify(message="doctor updated"), 200
-@app.route("/hms/deleteDoctor:<int:id>", methods=["Delete"])
+
+@app.route("/hms/deleteDoctor:<int:id>", methods=["DELETE"])
 @role_required("admin")
 def deleteDoctor(id):
-    activeDoctor = User.query.get(id)
-    if activeDoctor:
-        db.session.delete(activeDoctor)
-        db.session.commit()
-        return jsonify(message= "Doctor Delete :(")
-    else:
-        return jsonify(message= "Doctor Not Found :(")
-    
+
+    user = User.query.get(id)
+    doctor = user.doctorProfile
+
+    if doctor:
+        db.session.delete(doctor)
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify(message="Doctor Delete :(")
+
 @app.route("/hms/blockDoctor:<int:id>", methods=['POST'])
 @role_required("admin")
 def blockDoctor(id):
@@ -290,15 +305,17 @@ def unblockPatient(id):
         db.session.commit()
         return jsonify(message = f"{activePatient.userName} has been unblocked")
     
-@app.route("/hms/deletePatient:<int:id>", methods = ["Delete"])
+@app.route("/hms/deletePatient:<int:id>", methods=["DELETE"])
 def deletePatient(id):
-    activePatient = User.query.get(id)
-    if not activePatient:
-        return jsonify(message = "Patient Not Found")
-    else:
-        db.session.delete(activePatient)
-        db.session.commit()
-        return jsonify(message = "Patient has been deleted :( ")
+
+    user = User.query.get(id)
+    patient = user.patientProfile
+
+    if patient:
+        db.session.delete(patient)
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify(message="Patient has been deleted :( ")
 
 @app.route("/hms/adminFullTreatmentHistory:<int:patientId>", methods=["GET"])
 @role_required("admin")
@@ -383,7 +400,7 @@ def adminSearch():
     return jsonify(activeUsers=result)
 
 @app.route("/hms/doctorDashboard:<int:id>")
-@jwt_required("doctor")
+@role_required("doctor")
 def doctorDashboard(id):
     activeDoctor = User.query.filter_by(id=id, role="doctor").first()
     
@@ -393,12 +410,12 @@ def doctorDashboard(id):
     doctor = activeDoctor.doctorProfile
 
     upcommintAppointments = Appointment.query.filter(
-        Appointment.doctor_id == doctor.id,
+        Appointment.doctor.has(userId=activeDoctor.id),
         Appointment.status == "Booked"
     ).all()
 
     completedAppointments = Appointment.query.filter(
-        Appointment.doctor_id == doctor.id,
+        Appointment.doctor.has(userId=activeDoctor.id),
         Appointment.status == "completed"
     ).all()
 
@@ -663,51 +680,68 @@ def api_set_availability(user_id):
 @role_required("patient")
 def PatientDashboard(id):
 
-    activePatient = User.query.filter_by(id=id).first()
+    activePatient = Patient.query.filter_by(userId=id).first()
 
     if not activePatient:
-        return jsonify(message="Patient not found"),404
+        return jsonify({"error": "Patient not found"}), 404
+
+    appointments = Appointment.query.filter_by(patient_id=activePatient.id).all()
+
+    appointmentList = []
+    for a in appointments:
+        appointmentList.append({
+            "appointmentId": a.id,
+            "date": a.date.strftime("%Y-%m-%d") if a.date else None,
+            "time": a.time.strftime("%H:%M") if a.time else None,
+            "status": a.status,
+            "doctorName": a.doctor.doctorName,
+            "department": a.doctor.department.departmentName
+        })
 
     departments = Department.query.all()
 
     departmentList = []
 
-    for i in departments:
+    for d in departments:
 
         doctor_list = []
-        seen = set()
+        seen_doctors = set()
 
-        for doctor in i.doctors:
+        for doctor in d.doctors:
 
-            if doctor.userId in seen:
+            if doctor.userId in seen_doctors:
                 continue
 
-            seen.add(doctor.userId)
+            seen_doctors.add(doctor.userId)
 
             doctor_list.append({
                 "id": doctor.id,
                 "doctorName": doctor.doctorName,
                 "specialization": doctor.specialization,
-                "availability": doctor.availability
+                "availability": doctor.availability,
+                "morningSlot": doctor.morningSlot,
+                "eveningSlot": doctor.eveningSlot
             })
 
         departmentList.append({
-            "id": i.id,
-            "departmentName": i.departmentName,
-            "deptDescription": i.deptDescription,
+            "id": d.id,
+            "departmentName": d.departmentName,
+            "deptDescription": d.deptDescription,
             "doctors": doctor_list
         })
 
-    return jsonify({"departments": departmentList})
+    return jsonify({
+        "patient": activePatient.patientName,
+        "appointments": appointmentList,
+        "departments": departmentList
+    })
+
 
 @app.route("/hms/doctorAvailability:<int:doctorId>", methods=["GET"])
 @role_required("patient")
 def doctorAvailability(doctorId):
 
     doctor = Doctor.query.get(doctorId)
-
-    if not doctor:
-        return jsonify(message="Doctor not found"),404
 
     doctor_rows = Doctor.query.filter_by(
         userId=doctor.userId
@@ -778,3 +812,130 @@ def bookAppointment():
     db.session.commit()
 
     return jsonify(message="Appointment booked successfully")
+
+@app.route("/hms/patientTreatmentHistory:<int:id>")
+@role_required("patient")
+def patientTreatmentHistory(id):
+
+    patient = Patient.query.filter_by(userId=id).first()
+    treatments = Treatment.query.filter_by(patientId=patient.id).all()
+    treatmentList = []
+
+    for t in treatments:
+
+        appointment = Appointment.query.filter_by(id=t.appointmentId).first()
+        doctor = Doctor.query.filter_by(id=t.doctorId).first()
+
+        treatmentList.append({
+            "treatment_id": t.id,
+
+            "diagnosis": t.diagnosis,
+            "prescription": t.prescription,
+            "medicines": t.medicines,
+            "testsDone": t.testsDone,
+            "visitType": t.visiteType,
+            "notes": t.notes,
+
+            "doctor":{
+                "doctor_name": doctor.doctorName
+            },
+
+            "appointment":{
+                "date": appointment.date.strftime("%Y-%m-%d") if appointment.date else None,
+                "status": appointment.status
+            }
+        })
+
+    return jsonify({
+        "patient":{
+            "patient_name": patient.patientName
+        },
+        "treatments": treatmentList
+    })
+
+@app.route("/hms/doctorProfile:<int:doctorId>")
+@role_required("patient")
+def doctorProfile(doctorId):
+    activeDoctor = Doctor.query.filter_by(id = doctorId).all()
+    doctorList = []
+    for doctor in activeDoctor:
+        doctorList.append({
+            "doctorName": doctor.doctorName,
+            "specialization": doctor.specialization,
+            "availability": doctor.availability
+        })
+    print(doctorList)
+    return jsonify({
+        "doctorList" : doctorList,
+    })
+
+@app.route("/hms/editProfile:<int:id>", methods=["GET","POST"])
+@jwt_required()
+def editProfile(id):
+
+    if current_user.id != id:
+        return jsonify(message="Unauthorized access"),403
+
+    user = User.query.get(id)
+
+    if not user:
+        return jsonify(message="User not found"),404
+
+    if request.method == "GET":
+        return jsonify({
+            "userName": user.userName,
+            "email": user.email
+        })
+
+    data = request.get_json()
+
+    user.userName = data.get("userName", user.userName)
+    user.email = data.get("email", user.email)
+
+    if data.get("password"):
+        user.password = data.get("password")
+
+    db.session.commit()
+
+    return jsonify(message="Profile updated successfully")
+
+@app.route("/hms/deleteAppointment:<int:id>", methods=["DELETE"])
+@role_required("patient")
+def deleteAppointment(id):
+
+    appointment = Appointment.query.get(id)
+    db.session.delete(appointment)
+    db.session.commit()
+    return jsonify(message="Appointment deleted succexsfully")
+
+
+@app.route("/hms/exportTreatmentCSV")
+@role_required("patient")
+def exportTreatmentCSV():
+
+    patient = current_user.patientProfile
+
+    if not patient:
+        return jsonify(message="Patient not found"), 404
+
+    task = export_patient_csv.delay(patient.id)
+
+    result = {
+        "message": "Export started",
+        "task_id": task.id
+    }
+
+    return jsonify(result)
+
+
+@app.route("/hms/exportStatus:<string:task_id>")
+@role_required("patient")
+def exportStatus(task_id):
+
+    result = AsyncResult(task_id)
+
+    return jsonify({
+        "ready": result.ready(),
+        "successful": result.successful(),
+        "download_url": result.result if result.ready() else None
+    })

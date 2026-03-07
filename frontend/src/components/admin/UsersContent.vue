@@ -68,7 +68,7 @@
     </table>
   </div>
 
-  <h4>Upcommint Appointments</h4>
+  <h4>Upcommint Appointments and <span class="text-success">History</span></h4>
   <div class="reg-doc" style="max-height: 250px; overflow-y: auto;">
     <table class="table table-warning">
       <thead>

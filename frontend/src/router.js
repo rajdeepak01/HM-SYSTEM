@@ -18,6 +18,9 @@ import PatientDashboard from './components/patient/PatientDashboard.vue'
 import PatientTable from './components/patient/PatientTable.vue'
 import ViewDetails from './components/patient/ViewDetails.vue'
 import BookAppointment from './components/patient/BookAppointment.vue'
+import PatientHistoryComp from './components/patient/PatientHistoryComp.vue'
+import DoctorProfile from './components/patient/DoctorProfile.vue'
+import EditProfile from './components/patient/EditProfile.vue'
 
 const routes = [
   {
@@ -99,8 +102,20 @@ const routes = [
         component: ViewDetails
       },
       {
-        path:"/book/:doctorId",
+        path: "/book/:doctorId",
         component: BookAppointment
+      },
+      {
+        path: "/PatientHistoryComp/:userId",
+        component: PatientHistoryComp
+      },
+      {
+        path: "/doctorProfile/:id",
+        component: DoctorProfile
+      },
+      {
+        path: "/editProfile/:id",
+        component: EditProfile
       }
     ]
   },

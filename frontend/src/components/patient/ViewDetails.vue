@@ -31,6 +31,9 @@
             <router-link :to="'/book/' + doctor.id" class="btn btn-primary">
               check Avability
             </router-link>
+            <router-link :to="`/doctorProfile/${doctor.id}`" class="btn btn-success">
+              Doctor Profile
+            </router-link>
           </td>
           </td>
 

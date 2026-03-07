@@ -34,7 +34,7 @@
             <button
               class="btn btn-danger"
               @click="deleteRequest(appointment.id)">
-              Delete
+              Cancel
             </button>
           </td>
 
@@ -109,6 +109,7 @@ export default {
       if (response.ok) {
         this.upcomingAppointments = data.upcomming_appointments || []
         this.completedAppointments = data.completed_appointments || []
+        
       }
 
     } catch (error) {

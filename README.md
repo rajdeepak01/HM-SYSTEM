@@ -5,9 +5,7 @@ System for Managing Hospitals
 
 Project File structure is like:
 
-# Frontend
-
-# Backend
+#  to run the project
 
 ### Activate virtual enviroment: 
 source .env/bin/activate
@@ -23,3 +21,4 @@ redis-server
 
 ## run smtp server
 python -m aiosmtpd -n -l localhost:1025
+

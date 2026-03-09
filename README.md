@@ -22,9 +22,5 @@ source .env/bin/activate
 
 redis-server
 
-### 📧 SMTP Server (Development)
-
-python -m aiosmtpd -n -l localhost:1025
-
 ### MailHog
 mailhog

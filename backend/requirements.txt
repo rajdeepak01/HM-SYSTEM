@@ -36,6 +36,7 @@ prompt_toolkit==3.0.52
 PyJWT==2.11.0
 PySocks==1.7.1
 python-dateutil==2.9.0.post0
+pytz==2026.1.post1
 redis==6.4.0
 requests==2.32.5
 requests-file==3.0.1

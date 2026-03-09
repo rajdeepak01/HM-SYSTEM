@@ -7,6 +7,7 @@ from flask import current_app
 from .models import Treatment, Doctor, Appointment
 from .mail_utils import send_email
 from .email_template import render_email_template
+import pytz
 
 
 @shared_task(name="export_patient_csv")
@@ -53,8 +54,9 @@ def export_patient_csv(patient_id):
 
 @shared_task(name="daily_patient_reminder")
 def daily_patient_reminder():
+    ist = pytz.timezone("Asia/Kolkata")
 
-    today = date.today()
+    today = datetime.now(ist).date()
 
     appointments = Appointment.query.filter_by(date=today).all()
 

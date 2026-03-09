@@ -1,0 +1,2 @@
+patient_id,doctor_name,appointment_date,diagnosis,prescription,visit_type
+1,drtest1,2026-03-15,test,test,test

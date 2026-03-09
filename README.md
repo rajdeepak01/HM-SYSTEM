@@ -15,8 +15,9 @@ source .env/bin/activate
 
 ### Celery Worker
 
-celery -A app.celery worker --beat --loglevel=info
+1) celery -A app.celery worker --loglevel=info
 
+2)  
 ### Redis Server
 
 redis-server

@@ -1,24 +1,29 @@
-# HM-SYSTEM
-Hospital Management System
+# HM-SYSTEM — Hospital Management System
 
-System for Managing Hospitals
+> A comprehensive system for managing hospital operations.
 
-Project File structure is like:
 
-#  to run the project
+##  Getting Started
 
-### Activate virtual enviroment: 
-source .env/bin/activate
-
-### Creating virtual enviroment
+### 1. Create Virtual Environment
 python3 -m venv .env
 
-### run celery worker
-<!-- celery -A app.celery worker --loglevel=info -->
+### 2. Activate Virtual Environment
+source .env/bin/activate
+
+## Running Services
+
+### Celery Worker
+
 celery -A app.celery worker --beat --loglevel=info
-### run redis server
+
+### Redis Server
+
 redis-server
 
-## run smtp server
+### 📧 SMTP Server (Development)
+
 python -m aiosmtpd -n -l localhost:1025
 
+### MailHog
+mailhog

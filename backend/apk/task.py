@@ -104,4 +104,4 @@ def monthly_doctor_report():
             html
         )
 
-    return "Monthly reports sent"
+    return "Monthly reports sent !!!!! :)"

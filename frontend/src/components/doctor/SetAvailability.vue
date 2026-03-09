@@ -35,7 +35,6 @@
       </div>
     </div>
 
-    <!-- Availability Table -->
     <div style="width: 600px" v-if="availabilities.length > 0">
       <h5 class="mb-3">Your Set Availability</h5>
 

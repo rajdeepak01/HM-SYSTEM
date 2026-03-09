@@ -38,3 +38,8 @@ class LocalDevelopmentConfig(Config):
     MAIL_USERNAME = ""
     MAIL_PASSWORD = ""
     MAIL_DEFAULT_SENDER = "donotreply@hms.com"
+
+    CACHE_TYPE = "redis"
+    CACHE_REDIS_HOST = "localhost"
+    CACHE_REDIS_PORT = 6379
+    CACHE_REDIS_DB = 0

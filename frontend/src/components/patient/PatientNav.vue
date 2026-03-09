@@ -26,7 +26,6 @@
             </router-link>
           </li>
 
-          <!-- EXPORT BUTTON -->
           <li class="nav-item">
 
             <button class="btn btn-link nav-link" @click="exportCSV" :disabled="loading">
@@ -41,14 +40,12 @@
 
           </li>
 
-          <!-- STATUS -->
           <li v-if="exportStatus" class="nav-item">
             <span class="nav-link text-success">
               {{ exportStatus }}
             </span>
           </li>
 
-          <!-- PROFILE -->
           <li class="nav-item dropdown">
 
             <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
@@ -182,17 +179,14 @@ export default {
 
           const data = await res.json()
 
-          // WAIT until task is finished
           if (!data.ready) {
             return
           }
 
-          // STOP polling
           clearInterval(this.interval)
 
           this.loading = false
 
-          // SUCCESS
           if (data.successful && data.download_url) {
 
             this.exportStatus = "Download ready"

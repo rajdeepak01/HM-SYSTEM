@@ -63,7 +63,10 @@
 
           <td>{{ appointment.status }}</td>
           
-          <td><button class="btn btn-danger" @click="cancelAppointment(appointment.appointmentId)">Cancel</button></td>
+          <td>
+          <button v-if="appointment.status!='completed'" class="btn btn-danger" @click="cancelAppointment(appointment.appointmentId)">Cancel</button>
+          <p v-else class="text-success" >Completed</p>
+          </td>
 
         </tr>
 
@@ -96,7 +99,6 @@ export default {
         try{
 
             const token = localStorage.getItem("token")
-            // const userId = this.$route.params.userId
             const userId = localStorage.getItem("userId")
             
             const response = await fetch(

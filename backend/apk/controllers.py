@@ -7,6 +7,8 @@ from datetime import date, timedelta, datetime
 from sqlalchemy import or_
 from .task import *
 from celery.result import AsyncResult
+import random
+from .cache import cache
 
 def role_required(required_type):
     def wrapper(fn):
@@ -319,6 +321,7 @@ def deletePatient(id):
 
 @app.route("/hms/adminFullTreatmentHistory:<int:patientId>", methods=["GET"])
 @role_required("admin")
+@cache.cached(timeout=10)
 def adminFullTreatmentHistory(patientId):
 
     patient = Patient.query.get(patientId)
@@ -815,6 +818,7 @@ def bookAppointment():
 
 @app.route("/hms/patientTreatmentHistory:<int:id>")
 @role_required("patient")
+@cache.cached(timeout=10)
 def patientTreatmentHistory(id):
 
     patient = Patient.query.filter_by(userId=id).first()
@@ -939,3 +943,9 @@ def exportStatus(task_id):
         "successful": result.successful(),
         "download_url": result.result if result.ready() else None
     })
+
+@app.route("/checkcache")
+@cache.cached(timeout=10)
+
+def checkcache():
+    return {"random_number":int(random.randint(1,100))}

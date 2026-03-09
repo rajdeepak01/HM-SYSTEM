@@ -7,6 +7,7 @@ from apk.create_db import db
 from datetime import timedelta
 from apk.celery_init import celery_init_app
 from flask_mail import Mail   
+from apk.cache import cache
 
 app = None
 mail = Mail()   
@@ -19,8 +20,8 @@ def app_building():
 
     db.init_app(app)
     jwt.init_app(app)
-
     mail.init_app(app) 
+    cache.init_app(app)
 
     CORS(app, supports_credentials=True)
     app.app_context().push()

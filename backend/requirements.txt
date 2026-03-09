@@ -4,6 +4,7 @@ atpublic==7.0.0
 attrs==25.4.0
 billiard==4.2.4
 blinker==1.9.0
+cachelib==0.13.0
 celery==5.6.2
 certifi==2026.1.4
 charset-normalizer==3.4.4
@@ -13,8 +14,10 @@ click-plugins==1.1.1.2
 click-repl==0.3.0
 colorama==0.4.6
 cors==1.0.1
+dataclass-wizard==0.22.3
 filelock==3.20.3
 Flask==3.1.2
+Flask-Caching==2.3.1
 flask-cors==6.0.2
 Flask-JWT-Extended==4.7.1
 Flask-Mail==0.10.0
@@ -26,6 +29,7 @@ idna==3.11
 itsdangerous==2.2.0
 Jinja2==3.1.6
 kombu==5.6.2
+mailhog==0.1.1
 MarkupSafe==3.0.3
 packaging==26.0
 prompt_toolkit==3.0.52
